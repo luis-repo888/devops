@@ -28,10 +28,9 @@ def main():
     #    'mean_e2e_latency_ms', 'mean_ttft_ms', 'mean_tpot_ms', 'mean_itl_ms', 'concurrency'
     #]
     fieldnames = [
-        'backend', 'max_concurrency', 'random_input_len', 'random_output_len',
-        'duration', 'total_input_tokens', 'total_output_tokens',
-        'request_throughput', 'total_throughput',
-        'mean_e2e_latency_ms', 'mean_ttft_ms', 'median_ttft_ms', 'p99_ttft_ms', 'mean_tpot_ms', 'p99_tpot_ms', 'concurrency'
+        'backend', 'max_concurrency', 'concurrency', 'random_input_len', 'random_output_len',
+        'duration', 'completed', 'input_throughput', 'output_throughput' , 'total_throughput','request_throughput',
+        'median_e2e_latency_ms', 'p99_ttft_ms', 'p99_tpot_ms'
     ]
 
     # Write to CSV
