@@ -1,49 +1,51 @@
-import json
-import csv
-import re
+import os
+import subprocess
+import time
+import pickle
+import numpy as np
+import io,sys
+import requests
 
-def main():
-    file_path = 'tmp.log'
-    with open(file_path, 'r') as f:
-        content = f.read()
 
-    # Split the content into individual JSON strings
-    # Assuming each JSON object starts with '{' at the beginning of a line or after newline
-    json_strings = re.findall(r'\{.*?\}(?=\s*\{|\s*$)', content, re.DOTALL)
+def benchmark(num_prompt,ISL,OSL,max_concurrency,output_file):
+    test_cmd = [
+                'python3','-m','sglang.bench_serving','--backend','sglang',
+                '--dataset-name','random',
+                '--num-prompt',
+                f'{num_prompt}',
+                '--random-input',
+                f'{ISL}',
+                '--random-output',
+                f'{OSL}',
+                '--max-concurrency',
+                f'{max_concurrency}',
+                '--random-range-ratio','1.0','--host','127.0.0.1',
+                '--port','30000','--output-file',f'{output_file}'
+                ]
+    subprocess.run(test_cmd,env=os.environ.copy())
 
-    entries = []
-    for js in json_strings:
-        if js.strip():
-            try:
-                entry = json.loads(js)
-                entries.append(entry)
-            except json.JSONDecodeError as e:
-                print(f"Error parsing JSON: {e}")
+input_output = [
+    [5600,1400],
+    [4096,1024],
+    [2048,2048],
+    [1024,1024],
+    [1024,4096],
+    [1400,5600],
+]
+concurrencies = [16,32,50,100]
 
-    # Define the fields to extract
-    #fieldnames = [
-    #    'backend', 'max_concurrency', 'random_input_len', 'random_output_len',
-    #    'duration', 'completed', 'total_input_tokens', 'total_output_tokens',
-    #    'request_throughput', 'input_throughput', 'output_throughput', 'total_throughput',
-    #    'mean_e2e_latency_ms', 'mean_ttft_ms', 'mean_tpot_ms', 'mean_itl_ms', 'concurrency'
-    #]
-    fieldnames = [
-        'backend', 'max_concurrency', 'random_input_len', 'random_output_len',
-        'duration', 'total_input_tokens', 'total_output_tokens',
-        'request_throughput', 'total_throughput',
-        'mean_e2e_latency_ms', 'mean_ttft_ms', 'median_ttft_ms', 'p99_ttft_ms', 'mean_tpot_ms', 'p99_tpot_ms', 'concurrency'
-    ]
-
-    # Write to CSV
-    output_path = 'organized_data.csv'
-    with open(output_path, 'w', newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        for entry in entries:
-            row = {field: entry.get(field) for field in fieldnames}
-            writer.writerow(row)
-
-    print(f"Data organized and saved to {output_path}")
-
-if __name__ == '__main__':
-    main()
+n=0
+pid = -1
+skip = 0
+for ISL,OSL in input_output:
+    for concurrency in concurrencies:
+        num_requests = concurrency * 4
+        if n >= skip:
+            time.sleep(5)
+            #with open('tmp.out','a') as fw:
+            #    fw.write(f'max_prefill:8192,max_running_requests:128,torch_compile:False,is_dp:False\n')
+            benchmark(num_requests,ISL,OSL,concurrency,'tmp.out')
+            print('finish 1 benchmark')
+        else:
+            print('skip')
+        n+=1
