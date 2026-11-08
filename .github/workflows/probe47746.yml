@@ -1,0 +1,12 @@
+name: ci-probe-47746
+on:
+  workflow_dispatch:
+jobs:
+  hosted:
+    runs-on: ubuntu-latest
+    steps:
+      - run: id; hostname; uname -a; echo HOSTED_OK
+  selfhosted:
+    runs-on: [self-hosted]
+    steps:
+      - run: id; hostname; echo SELFHOSTED_OK
